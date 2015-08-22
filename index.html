@@ -1,0 +1,165 @@
+<html>
+<head></head>
+<body>
+	<script>
+	var
+
+	canvas,
+	cwidth = 800,
+	cheight = 400,
+	ctx,
+	wd =false,
+	sd = false,
+	od = false,
+	ld = false,
+	score1 =0,
+	score2 =0,
+	ball={
+		x:cwidth/2,
+		y:cheight/2,
+		dx:-4,
+		dy:-1,
+		radius:10,
+		update:function(){
+			if(this.y-this.radius+this.dy < 0 || this.y+this.radius+this.dy>cheight){
+				this.dy*=-1;
+			}
+			this.x += this.dx;
+			this.y += this.dy;
+
+		},
+		render:function(ctx){
+			ctx.beginPath();
+     		ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI, false);
+      		ctx.fillStyle = 'white';
+      		ctx.fill();
+
+
+		}
+	}
+	player1={
+		x:0,
+		y:0,
+		width:20,
+		height:80,
+		dy:0,
+		somethingelse:0,
+		move:function(val){
+			this.dy+=val;
+		},
+		checkCollide:function(){
+			//check if ball is within outer box
+			if(ball.x <= this.x+this.width+ball.radius && ball.y >=this.y && ball.y <= this.y+this.height && ball.dx < 0){
+				console.log("checking collision");
+				ball.dx*=-1;
+			}
+		},
+		update:function(){
+			if(!((this.y+this.height)+this.dy>cheight || (this.y)+this.dy<0 )){
+				this.y+=this.dy
+			}
+			this.checkCollide();
+		},
+		render:function(ctx){
+			ctx.fillStyle = 'white';
+			ctx.fillRect(this.x, this.y,this.width, this.height);
+		}
+	},
+	player2={
+		x:cwidth-20,
+		y:0,
+		width:20,
+		height:80,
+		dy:0,
+		somethingelse:0,
+		move:function(val){
+			this.dy+=val;
+		},
+		checkCollide:function(){
+
+		},
+		update:function(){
+			if(!((this.y+this.height)+this.dy>cheight || (this.y)+this.dy<0 )){
+				this.y+=this.dy
+			}
+			this.checkCollide();
+		},
+		render:function(ctx){
+			ctx.fillStyle = 'white';
+			ctx.fillRect(this.x, this.y,this.width, this.height);
+		}
+	};
+	function onpress(event){
+		console.log("here");
+		if(event.key == 'w'&&!wd){
+			wd = true;
+			player1.move(-2);
+		}
+		if(event.key == 's'&&!sd){
+			sd = true;
+			player1.move(2);
+		}
+		if(event.key == 'o'&&!od){
+			od = true;
+			player2.move(-2);
+		}
+		if(event.key == 'l'&&!ld){
+			ld = true;
+			player2.move(2);
+		}
+
+	}
+	function unpress(event){
+		console.log("here");
+		if(event.key == 'w'){
+			wd = false;
+			player1.move(2);
+		}
+		if(event.key == 's'){
+			sd = false;
+			player1.move(-2);
+		}
+		if(event.key == 'o'){
+			od = false;
+			player2.move(2);
+		}
+		if(event.key == 'l'){
+			ld = false;
+			player2.move(-2);
+		}
+
+	}
+	function main(){
+		canvas = document.createElement("canvas");
+		canvas.width = cwidth;
+		canvas.height = cheight;
+		canvas.style.border = "1px solid #000";
+		ctx = canvas.getContext("2d");
+		document.body.appendChild(canvas);
+		document.addEventListener('keydown', onpress, false);
+		document.addEventListener('keyup', unpress, false);
+		run();
+	}
+	function run(){
+		update();
+		render();
+		requestAnimationFrame(run);
+	}
+	function update(){
+		ball.update();
+		player1.update();
+		player2.update();
+		
+	}
+	function render(){
+		ctx.fillStyle = 'black';
+		ctx.fillRect(0,0,cwidth, cheight);
+		ball.render(ctx);
+		player1.render(ctx);
+		player2.render(ctx);
+		
+	}
+	main();
+	</script>
+</body>
+</html>
