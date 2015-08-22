@@ -4,28 +4,68 @@
 	<script>
 	var
 
+	//canvas/updates/frames
 	canvas,
 	cwidth = 800,
 	cheight = 400,
 	ctx,
+	updates = 0,
+	frames = 0,
+	targetUPS = 60,
+	delta = 0,
+	timePerUpdate,
+	updateTime,
+	frameTime,
+	lastUpdate = 0,
+	fps = 0,
+	ups = 0,
+
+
+	//keyboard
 	wd =false,
 	sd = false,
 	od = false,
 	ld = false,
+
+
+	//games vars
 	score1 =0,
 	score2 =0,
 	ball={
 		x:cwidth/2,
 		y:cheight/2,
 		dx:-4,
-		dy:-1,
+		dy:1,
 		radius:10,
+		reset:function(){
+			var num = score2-score1;
+			var index = 1;
+			var index2 = Math.random() <.5 ? -1 : 1;
+			if(num==0){
+				index = Math.random() <.5 ? -1 : 1;
+			} else if (num < 0){
+				index *= -1;
+			}
+			this.x = cwidth/2;
+			this.y = cheight/2;
+			this.dx = Math.ceil(Math.random()*2+2)* index;
+			this.dy = Math.ceil(Math.random()*3)* index2;			
+		},
 		update:function(){
 			if(this.y-this.radius+this.dy < 0 || this.y+this.radius+this.dy>cheight){
 				this.dy*=-1;
 			}
 			this.x += this.dx;
 			this.y += this.dy;
+			if(this.x-this.radius <=-2){
+				score1++; 
+				this.reset();
+				console.log('score1');
+			} else if(this.x+this.radius >= cwidth+2){
+				score2++;
+				this.reset();
+				console.log('score2');
+			}
 
 		},
 		render:function(ctx){
@@ -39,7 +79,7 @@
 	}
 	player1={
 		x:0,
-		y:0,
+		y:(cheight-80)/2,
 		width:20,
 		height:80,
 		dy:0,
@@ -48,10 +88,16 @@
 			this.dy+=val;
 		},
 		checkCollide:function(){
-			//check if ball is within outer box
-			if(ball.x <= this.x+this.width+ball.radius && ball.y >=this.y && ball.y <= this.y+this.height && ball.dx < 0){
-				console.log("checking collision");
-				ball.dx*=-1;
+			//Math.pow(ball.radius,2) = Math.pow((ball.x-this.x+this.width), 2) + Math.pow((ball.y-this.y), 2);
+			//check if ball contacts front then topleft  and topright corners
+			if(this.x + this.width + ball.radius > ball.x && ball.y > this.y && ball.y < this.y + this.height && ball.dx < 0){
+				ball.dx *= -1;
+			} else if(Math.pow(ball.radius,2) > Math.pow((ball.x-(this.x+this.width)), 2) + Math.pow((ball.y-this.y), 2) && ball.dx < 0){
+				ball.dx *= -1;
+				ball.dy = Math.abs(ball.dy)*-1;
+			} else if (Math.pow(ball.radius,2) > Math.pow((ball.x-(this.x+this.width)), 2) + Math.pow((ball.y-(this.y+ this.height)), 2)&&ball.dx < 0){
+				ball.dx *= -1;
+				ball.dy = Math.abs(ball.dy);
 			}
 		},
 		update:function(){
@@ -67,7 +113,7 @@
 	},
 	player2={
 		x:cwidth-20,
-		y:0,
+		y:(cheight-80)/2,
 		width:20,
 		height:80,
 		dy:0,
@@ -90,40 +136,38 @@
 		}
 	};
 	function onpress(event){
-		console.log("here");
-		if(event.key == 'w'&&!wd){
+		if((event.key == 'w' || event.key == 'W') &&!wd){
 			wd = true;
 			player1.move(-2);
 		}
-		if(event.key == 's'&&!sd){
+		if((event.key == 's' || event.key == 'S' )&&!sd){
 			sd = true;
 			player1.move(2);
 		}
-		if(event.key == 'o'&&!od){
+		if((event.key == 'o' || event.key == 'O' )&&!od){
 			od = true;
 			player2.move(-2);
 		}
-		if(event.key == 'l'&&!ld){
+		if((event.key == 'l' || event.key == 'L') &&!ld){
 			ld = true;
 			player2.move(2);
 		}
 
 	}
 	function unpress(event){
-		console.log("here");
-		if(event.key == 'w'){
+		if(event.key == 'w'|| event.key == 'W'){
 			wd = false;
 			player1.move(2);
 		}
-		if(event.key == 's'){
+		if(event.key == 's'|| event.key == 'S'){
 			sd = false;
 			player1.move(-2);
 		}
-		if(event.key == 'o'){
+		if(event.key == 'o'|| event.key == 'O'){
 			od = false;
 			player2.move(2);
 		}
-		if(event.key == 'l'){
+		if(event.key == 'l'|| event.key == 'L'){
 			ld = false;
 			player2.move(-2);
 		}
@@ -138,26 +182,58 @@
 		document.body.appendChild(canvas);
 		document.addEventListener('keydown', onpress, false);
 		document.addEventListener('keyup', unpress, false);
+		updateTime = frameTime = performance.now();
+		timePerUpdate = 1000/targetUPS;
 		run();
 	}
 	function run(){
-		update();
+		var temp = performance.now();
+		if(lastUpdate == 0){
+			lastUpdate = temp;
+		}
+		delta += temp - lastUpdate;
+		var count = 0;
+		while(delta >= timePerUpdate){
+			count++;
+			update();
+			delta -= timePerUpdate;
+			if(count > 60){
+				console.log("BAIL")
+			}
+		}
+		lastUpdate = temp;
 		render();
+
 		requestAnimationFrame(run);
 	}
 	function update(){
+		updates++;
+		var temp = performance.now();
+		if(temp - updateTime > 1000 ){
+			updateTime = temp;
+			ups = updates;
+			updates = 0;
+		}
 		ball.update();
 		player1.update();
-		player2.update();
-		
+		player2.update();	
 	}
 	function render(){
+		frames++;
+		var temp = performance.now();
+		if(temp - frameTime > 1000){
+			fps = frames;
+			frames =0;
+			frameTime = temp;
+		}
 		ctx.fillStyle = 'black';
 		ctx.fillRect(0,0,cwidth, cheight);
 		ball.render(ctx);
 		player1.render(ctx);
 		player2.render(ctx);
-		
+		ctx.font = '38pt Calibri';
+      	ctx.fillStyle = 'blue';
+      	ctx.fillText('fps: ' + fps + '   ups: ' + ups, cwidth/2-200, 75);	
 	}
 	main();
 	</script>
